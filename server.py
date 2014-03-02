@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
-# Copyright 2013 Abram Hindle
+# Copyright 2013 Abram Hindle, Andrew Charles
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
 
 
 import flask
-from flask import Flask, request
+from flask import Flask, request, render_template, redirect
 import json
 app = Flask(__name__)
 app.debug = True
@@ -74,16 +74,29 @@ def flask_post_json():
 @app.route("/")
 def hello():
     '''Return something coherent here.. perhaps redirect to /static/index.html '''
-    return None
+    return redirect('static/index.html')
 
 @app.route("/entity/<entity>", methods=['POST','PUT'])
 def update(entity):
     '''update the entities via this interface'''
-    return None
+    if request.method == 'POST':
+        json = flask_post_json()
+        #json.
+        print json
+        return True
+    elif request.method == 'PUT':
+        pass
+    else:
+        pass
+    return False
 
 @app.route("/world", methods=['POST','GET'])    
 def world():
     '''you should probably return the world here'''
+    if request.method == 'GET':
+        return myWorld
+    elif request.method == 'POST':
+        pass
     return None
 
 @app.route("/entity/<entity>")    
@@ -94,7 +107,15 @@ def get_entity(entity):
 @app.route("/clear", methods=['POST','GET'])
 def clear():
     '''Clear the world out!'''
-    return None
+    if request.method == 'POST':
+        myWorld.clear()
+        return True
+    elif request.method == 'GET':
+        pass
+    else:
+        pass
+    return False
+
 
 if __name__ == "__main__":
     app.run()
