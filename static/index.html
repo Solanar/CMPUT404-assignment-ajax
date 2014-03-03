@@ -84,16 +84,18 @@ world = {};
 function drawCircle(context, entity) {
     with(context) {
         beginPath();
-        lineWidth = 3;
+        lineWidth = 2;//3;
         var x = entity["x"];
         var y = entity["y"];
         //moveTo(x,y);
         fillStyle = entity["colour"];
         strokeStyle = fillStyle;
         arc(x, y,
-            (entity["radius"])?entity["radius"]:50,
-            0, 2.0 * Math.PI, false);
+            (entity["radius"])?entity["radius"]:25,//50,
+            0, 1.9 * Math.PI, false);//2.0
         stroke();
+        // Fill with gradient
+        //fill();
     }
 }
 
@@ -167,7 +169,7 @@ function addEntity(entity, data) {
 var counter = 0;
 function addEntityWithoutName(data) {
     //var name = "X"+Math.floor((Math.random()*100)+1);
-    var name = "X" + (counter++) % 100;
+    var name = "X" + (counter++) % 300;//100;
     addEntity(name, data);
 }
 
@@ -267,26 +269,35 @@ mouse = (function() {
     return self;
 })();
 
+function r() {
+    var negOrPos = Math.random() < 0.5 ? -1 : 1;
+    return (counter * negOrPos) % 5;
+}
+
 // Add the application specific mouse listeners!
 //XXX: TODO Make these prettier!
 mouse.mousedowners.push(function(x,y,clicked,e) {
-    addEntityWithoutName({'x':x,'y':y,'colour':'blue'});
+    addEntityWithoutName({'x':x + r(),'y':y + r(),
+                         'colour':'darkcyan'});//'blue'});
 });
 
 mouse.mouseuppers.push(function(x,y,clicked,e) {
-    addEntityWithoutName({'x':x,'y':y,'colour':'red'});
+    addEntityWithoutName({'x':x + r(),'y':y + r(),
+                         'colour':'darkred'});//'red'});
 });
 
 mouse.mousedraggers.push(function(x,y,clicked,e) {
-    addEntityWithoutName({'x':x,'y':y,'colour':'green',
-                          'radius':10});
+    addEntityWithoutName({'x':x + r(),'y':y + r(),
+                         'colour':'lawngreen',//'green',
+                          'radius':5});//10});
 });
 
 function setWorld(newWorld) {
     drawNextFrame();
-    for (var key in newWorld) {
-        world[key] = newWorld[key];
-    }
+    world = newWorld;
+    // for (var key in newWorld) {
+    //     world[key] = newWorld[key];
+    // }
 }
 
 function update() {
@@ -296,7 +307,7 @@ function update() {
 }
 
 // 30 frames per second
-setInterval( update, 1000/30.0);
+setInterval( update, 1000/35.0);//30.0);
     </script>
 </body>
 </html>
