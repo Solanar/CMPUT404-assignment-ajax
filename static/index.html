@@ -1,19 +1,19 @@
 <!DOCTYPE HTML>
-<html> 
-  <head> 
-    <title>AJAX Assignment</title> 
-    <meta charset="utf-8" /> 
+<html>
+  <head>
+    <title>AJAX Assignment</title>
+    <meta charset="utf-8" />
     <meta content='width=device-width; height=device-height; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;' name='viewport' />
     <meta name="viewport" content="width=device-width" />
     <meta name="license" content="
         Copyright 2013 Abram Hindle, Andrew Charles
-        
+
         Licensed under the Apache License, Version 2.0 (the "License");
         you may not use this file except in compliance with the License.
         You may obtain a copy of the License at
-        
+
             http://www.apache.org/licenses/LICENSE-2.0
-        
+
         Unless required by applicable law or agreed to in writing, software
         distributed under the License is distributed on an "AS IS" BASIS,
         WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,9 +21,9 @@
         limitations under the License.
     "/>
     <script src="json2.js"></script>
-  </head> 
-  <body bgcolor="black" height="100%" width="100%"> 
-    <canvas id="c" width="100%" height="100%" style="-webkit-tap-highlight-color: transparent;"></canvas> 
+  </head>
+  <body bgcolor="black" height="100%" width="100%">
+    <canvas id="c" width="100%" height="100%" style="-webkit-tap-highlight-color: transparent;"></canvas>
     <script>
 var canvas = document.getElementById('c');
 var host = window.location.host;
@@ -31,42 +31,69 @@ var context = canvas.getContext("2d");
 var W = canvas.width  = window.innerWidth-6;
 var H = canvas.height = window.innerHeight-50;
 
-
-function sendJSONXMLHTTPRequest(url, objects, callback) {
+function sendJSONHTTPRequest(url, objects, callback) {
     var xhr = new XMLHttpRequest();
     xhr.onreadystatechange = function () {
-        if (xhr.readyState==4) {
+        if (xhr.readyState==4) { // done
             try {
-                if (xhr.status==200) {
+                if (xhr.status==200) { // ok
                     //XXX: parse some JSON from the request!
                     //XXX: Pass the data to the callback!
+                    //alert("POST" + xhr.responseText)
+                    if (callback) {
+                        callback(JSON.parse(xhr.responseText));
+                    }
                 }
-            } 
-            catch(e) {
-                alert('Error: ' + e.name);
+                else { alert('XHR Error: ' + xhr.status) }
             }
+            catch(e) { alert('Error: ' + e.name); }
         }
     };
     //XXX: POST to a URL
     //XXX: set the mimetype and the accept headers!
     // Remember to use application/json !
+    xhr.open('POST', url, true);
+    xhr.setRequestHeader("Content-type", "application/json");
+    xhr.setRequestHeader("Accept","application/json");
+    xhr.send(JSON.stringify(objects));
 }
 
+// function getJSONHTTPRequest(url, callback) {
+//     var xhr = new XMLHttpRequest();
+//     xhr.onreadystatechange = function () {
+//         if (xhr.readyState==4) { // done
+//             try {
+//                 if (xhr.status==200) { // ok
+//                     //XXX: parse some JSON from the request!
+//                     //XXX: Pass the data to the callback!
+//                     callback(JSON.parse(xhr.responseText));
+//                 }
+//                 else { alert('XHR Error: ' + xhr.status) }
+//             }
+//             catch(e) { alert('Error: ' + e.name); }
+//         }
+//     };
+//     xhr.open('GET', url, true);
+//     xhr.setRequestHeader("Accept", "application/json");
+//     xhr.send();
+// }
 
 world = {};
 
 //XXX: TODO Make this prettier!
-function drawCircle(context,entity) {
+function drawCircle(context, entity) {
     with(context) {
-        beginPath();              
+        beginPath();
         lineWidth = 3;
         var x = entity["x"];
         var y = entity["y"];
         //moveTo(x,y);
         fillStyle = entity["colour"];
         strokeStyle = fillStyle;
-        arc(x, y, (entity["radius"])?entity["radius"]:50, 0, 2.0 * Math.PI, false);  
-        stroke();                                
+        arc(x, y,
+            (entity["radius"])?entity["radius"]:50,
+            0, 2.0 * Math.PI, false);
+        stroke();
     }
 }
 
@@ -82,11 +109,10 @@ function prepEntity(entity) {
 
 function clearFrame() {
     with(context) {
-	moveTo(0,0);
-	fillStyle = "#000";
-	fillRect(0,0,W,H);
+    	moveTo(0,0);
+    	fillStyle = "#000";
+    	fillRect(0,0,W,H);
     }
-
 }
 
 // This actually draws the frame
@@ -94,12 +120,11 @@ function renderFrame() {
     clearFrame();
     for (var key in world) {
         var entity = world[key];
-        drawCircle(context,prepEntity(entity));
+        drawCircle(context, prepEntity(entity));
     }
 }
 
 var drawNext = true;
-
 // Signals that there's something to be drawn
 function drawNextFrame() {
     drawNext = true;
@@ -116,46 +141,44 @@ function drawFrame() {
 
 // This is unpleasent, canvas clicks are not handled well
 // So use this code, it works well on multitouch devices as well.
-
 function getPosition(e) {
 	if ( e.targetTouches && e.targetTouches.length > 0) {
 		var touch = e.targetTouches[0];
 		var x = touch.pageX  - canvas.offsetLeft;
 		var y = touch.pageY  - canvas.offsetTop;
-		return [x,y];
 	} else {
 		var rect = e.target.getBoundingClientRect();
 		var x = e.offsetX || e.pageX - rect.left - window.scrollX;
 		var y = e.offsetY || e.pageY - rect.top  - window.scrollY;
 		var x = e.pageX  - canvas.offsetLeft;
 		var y = e.pageY  - canvas.offsetTop;
-		return [x,y];
 	}
+    return [x,y];
 }
 
 
 function addEntity(entity, data) {
     world[entity] = data;
     drawNextFrame(); // (but should we?)
-    //XXX: Send a XHTML Request that updates the entity you just  modified!
-
+    //XXX: Send a XHTML Request that updates the entity you just modified!
+    sendJSONHTTPRequest('/entity/' + entity, data, null);
 }
 
 var counter = 0;
 function addEntityWithoutName(data) {
     //var name = "X"+Math.floor((Math.random()*100)+1);
-    var name = "X"+(counter++)%100;
-    addEntity(name,data);
+    var name = "X" + (counter++) % 100;
+    addEntity(name, data);
 }
 
-// canvas + mouse/touch is complicated 
+// canvas + mouse/touch is complicated
 // I give you this because well the mouse/touch stuff is a total
 // pain to get right. This has some out of context bug too.
 mouse = (function() {
-    // Now this isn't the most popular way of doing OO in 
+    // Now this isn't the most popular way of doing OO in
     // Javascript, but it relies on lexical scope and I like it
     // This isn't 301 so I'm not totally bound to OO :)
-    var self;    
+    var self;
     self = {
         clicked: 0,
         // these are listener lists append to them
@@ -204,7 +227,7 @@ mouse = (function() {
             }
         },
         touchstart: function(e) {
-            self.lasttouch = e;                                         
+            self.lasttouch = e;
             return self.mousedown(e);
         },
 	touchend: function(e) {
@@ -219,13 +242,13 @@ mouse = (function() {
                 var y = pos[1];
 	        if (self.clicked != 0) {
 	            //self.squeakin(x,y);
-                    self.callListeners(self.mousedraggers,x,y,self.clicked,e);
+                self.callListeners(self.mousedraggers,x,y,self.clicked,e);
 	        }
                 self.callListeners(self.mousemovers,x,y,self.clicked,e);
-            }            
+            }
 	},
 	touchmove: function(e) {
-            self.lasttouch = e;                                         
+            self.lasttouch = e;
             return self.mousemove(e);
 	},
 	// Install the mouse listeners
@@ -259,17 +282,21 @@ mouse.mousedraggers.push(function(x,y,clicked,e) {
                           'radius':10});
 });
 
+function setWorld(newWorld) {
+    drawNextFrame();
+    for (var key in newWorld) {
+        world[key] = newWorld[key];
+    }
+}
 
 function update() {
     //XXX: TODO Get the world from the webservice using a XMLHTTPRequest
+    sendJSONHTTPRequest('/world', null, setWorld);
     drawFrame();
 }
 
 // 30 frames per second
 setInterval( update, 1000/30.0);
-
-
-
     </script>
 </body>
 </html>
